@@ -1,0 +1,7 @@
+caso,tipo,renda,pessoas,pcd_idoso,moradia_precaria,esperado,obtido
+1,Válido - extrema pobreza,80.0,5,1,1.0,Alta vulnerabilidade,Alta vulnerabilidade (prob. alta = 99%)
+2,Válido - renda mais alta,600.0,2,0,0.0,Baixa/moderada,Baixa/moderada (prob. alta = 0%)
+3,Válido - renda média com fatores de risco,300.0,3,1,1.0,Alta vulnerabilidade,Alta vulnerabilidade (prob. alta = 81%)
+4a,Inválido - renda negativa,-100.0,3,0,0.0,"Mensagem de erro, sem classificar",ERRO: A renda per capita não pode ser negativa.
+4b,Incompleto - renda e moradia em branco,,3,0,,"Mensagem de erro, sem classificar",ERRO: Informe a renda per capita (pode ser 0 se a família não tem renda). | Indique se a moradia é precária.
+5,"Limítrofe - sem renda, mora sozinho",0.0,1,0,0.0,"Sem resultado real conhecido (pela regra do dataset, ~75% de chance de alta)",Baixa/moderada (prob. alta = 43%)

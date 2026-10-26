@@ -1,0 +1,47 @@
+{
+  "validacao_cruzada": {
+    "Regressão Logística": {
+      "f1": 0.856,
+      "recall": 0.851,
+      "acuracia": 0.884,
+      "f1_desvio": 0.028
+    },
+    "Árvore de Decisão (prof. 4)": {
+      "f1": 0.841,
+      "recall": 0.868,
+      "acuracia": 0.867,
+      "f1_desvio": 0.027
+    }
+  },
+  "teste": {
+    "Regressão Logística": {
+      "f1_classe1": 0.852,
+      "recall_classe1": 0.807,
+      "matriz_confusao": [
+        [
+          225,
+          14
+        ],
+        [
+          31,
+          130
+        ]
+      ]
+    },
+    "Árvore de Decisão (prof. 4)": {
+      "f1_classe1": 0.836,
+      "recall_classe1": 0.807,
+      "matriz_confusao": [
+        [
+          219,
+          20
+        ],
+        [
+          31,
+          130
+        ]
+      ]
+    }
+  },
+  "modelo_deploy": "Regressão Logística"
+}
