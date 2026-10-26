@@ -1,0 +1,108 @@
+TEXTO PARA ATUALIZAR O RELATÓRIO
+
+Substituir as seções 3 a 9 do .docx pelo texto abaixo e depois exportar em PDF. As seções 1 e 2 podem ficar, com estes ajustes: trocar 2024 por 2026 na capa; colocar o link do app e o do GitHub na tabela da seção 1; no último parágrafo da seção 2, dizer que foram comparadas a Regressão Logística e a Árvore de Decisão; nas referências, trocar as datas de acesso para out. 2026, incluir o vídeo do YouTube e tirar a referência dos microdados do MDS (ou citar só como inspiração para as variáveis). A seção 10 deve refletir o que cada um fez nesta versão.
+
+As tabelas estão escritas com barras para facilitar; no Word, montar como tabela normal.
+
+
+3. CARACTERIZAÇÃO DO DATASET E VARIÁVEIS
+
+Os microdados identificados do Cadastro Único não são de acesso público, por conta da LGPD, e a base pública desidentificada não possui um rótulo de alta vulnerabilidade que permita treinar um classificador supervisionado. Por esse motivo, o grupo optou por construir um dataset sintético (script gerar_dataset.py, com semente fixa 2026), com variáveis e distribuições inspiradas no perfil das famílias inscritas no CadÚnico.
+
+O rótulo foi definido a partir de um índice de vulnerabilidade. A renda per capita baixa soma até 3 pontos, cada morador acima de três soma 0,25 ponto (até 1,25), a presença de idoso ou pessoa com deficiência soma 1 ponto e a moradia precária soma 1,2 ponto. Ao índice foi acrescentado um ruído aleatório com desvio-padrão de 0,6, simulando o fato de que a avaliação de um técnico não segue uma regra exata. As famílias com índice igual ou maior que 2,6 foram rotuladas como alta vulnerabilidade.
+
+Também foram inseridos problemas comuns em bases cadastrais, para que a etapa de preparação fosse necessária: cerca de 3% de renda não declarada, 2% de moradia não informada e 40 cadastros duplicados. A base final tem 2.040 registros (2.000 após a remoção das duplicatas), 4 atributos preditores e a variável-alvo, com 59,7% das famílias na classe baixa/moderada e 40,3% na classe alta.
+
+Na Tabela 1, acrescentar a linha: cod_familia | Texto | Código fictício do cadastro, usado apenas para identificar duplicatas; não entra no modelo.
+
+A principal limitação do dataset é ser sintético. O modelo aprende a regra definida pelo grupo, e não o comportamento real das famílias, então o desempenho com dados reais não foi verificado.
+
+
+4. METODOLOGIA E FLUXO DE DESENVOLVIMENTO
+
+a) Análise e preparação dos dados
+
+Na análise inicial foram encontrados 78 valores ausentes em renda_per_capita, 34 em moradia_precaria e 40 cadastros repetidos (mesmo cod_familia). As duplicatas foram removidas antes da divisão dos dados, já que essa etapa não depende de nenhuma informação aprendida. Os valores ausentes foram preenchidos com a mediana, que sofre menos influência das rendas mais altas. Essa imputação foi colocada dentro de um Pipeline do scikit-learn, de modo que a mediana é calculada somente com os dados de treino, evitando vazamento de dados. Para a Regressão Logística, os atributos também foram padronizados com o StandardScaler, ajustado da mesma forma apenas no treino. Não foi necessário codificar variáveis categóricas, pois as variáveis binárias já estão em 0 e 1.
+
+b) Divisão dos dados
+
+Os dados foram divididos em 80% para treino (1.600 registros) e 20% para teste (400 registros), com estratificação pela variável-alvo. O conjunto de teste foi usado apenas na avaliação final e não participou da escolha do modelo.
+
+c) Alternativas comparadas
+
+Foram comparadas a Regressão Logística, um modelo linear que estima a probabilidade de alta vulnerabilidade, e a Árvore de Decisão com profundidade máxima 4 e mínimo de 10 amostras por folha. Esses limites na árvore foram definidos para evitar sobreajuste e manter as regras fáceis de ler.
+
+d) Critério de escolha
+
+As duas alternativas foram avaliadas com validação cruzada estratificada de 5 folds no conjunto de treino. O critério de escolha foi o F1 da classe de alta vulnerabilidade, porque ele equilibra a capacidade de encontrar as famílias vulneráveis (recall) com a de não gerar alarmes falsos em excesso (precisão).
+
+e) Ferramentas
+
+O projeto foi desenvolvido em Python, com pandas, scikit-learn, matplotlib, joblib e Streamlit. As versões estão no arquivo requirements.txt.
+
+
+5. RESULTADOS E AVALIAÇÃO DE DESEMPENHO
+
+Tabela 2 - Validação cruzada no treino (média de 5 folds)
+
+Modelo | F1 (classe 1) | Recall (classe 1) | Acurácia
+Regressão Logística | 0,856 (± 0,028) | 0,851 | 0,884
+Árvore de Decisão (prof. 4) | 0,841 (± 0,027) | 0,868 | 0,867
+
+Tabela 3 - Avaliação no conjunto de teste (400 famílias, sendo 239 da classe 0 e 161 da classe 1)
+
+Modelo | Classe | Precisão | Recall | F1
+Regressão Logística | Baixa/moderada (0) | 0,879 | 0,941 | 0,909
+Regressão Logística | Alta (1) | 0,903 | 0,807 | 0,852
+Árvore de Decisão | Baixa/moderada (0) | 0,876 | 0,916 | 0,896
+Árvore de Decisão | Alta (1) | 0,867 | 0,807 | 0,836
+
+A acurácia foi de 0,887 na Regressão Logística e de 0,873 na Árvore de Decisão.
+
+(inserir a figura resultados/matrizes_confusao.png)
+
+Pelas matrizes de confusão, os dois modelos deixaram de identificar 31 das 161 famílias de alta vulnerabilidade. A diferença entre eles aparece nos falsos positivos, que foram 14 na Regressão Logística e 20 na Árvore. Assim, a Regressão Logística encontrou as mesmas famílias prioritárias gerando menos alarmes falsos.
+
+Em relação à importância das variáveis, a renda per capita foi a mais relevante nos dois modelos, com coeficiente de -3,58 na Regressão Logística e 74% da importância na Árvore. Em seguida aparecem a moradia precária (+1,27) e a presença de idoso ou PcD (+1,07), e a quantidade de pessoas teve o menor peso (+0,67). Esse resultado é coerente com a regra usada para gerar os rótulos, o que indica que os modelos aprenderam o padrão esperado.
+
+A Regressão Logística teve o maior F1 na validação cruzada e por isso foi escolhida para o deploy. A diferença em relação à Árvore foi pequena (0,015, menor que a variação entre os folds), então as duas seriam aceitáveis. Também pesou o fato de a Regressão Logística fornecer uma probabilidade, que é mostrada ao técnico na aplicação, e de responder de forma contínua às mudanças de renda. As regras da Árvore (resultados/arvore_decisao.png) continuam úteis para explicar quais fatores influenciam a decisão.
+
+
+6. ARQUITETURA DO DEPLOY E INTERFACE WEB
+
+A aplicação foi desenvolvida em Streamlit e publicada no Streamlit Community Cloud, no link [LINK], com o código disponível em [LINK DO GITHUB].
+
+Na interface, o técnico informa a renda per capita em reais por mês, a quantidade de moradores (de 1 a 20), se há idoso ou pessoa com deficiência e se a moradia é precária. Cada campo tem uma explicação curta sobre o que deve ser preenchido. Antes da previsão, o arquivo inferencia.py valida os dados e bloqueia campos em branco, renda negativa ou acima de R$ 10.000 e quantidade de pessoas fora do intervalo permitido, mostrando mensagens que explicam o que precisa ser corrigido.
+
+O modelo é carregado uma única vez a partir do arquivo modelo_vulnerabilidade.pkl, que contém o pipeline completo (imputação, padronização e modelo). Cada clique no botão executa apenas uma inferência, sem refazer o treinamento, e como o pré-processamento faz parte do pipeline, as entradas recebem o mesmo tratamento usado no treino. O resultado é apresentado em linguagem simples, em vermelho para alta vulnerabilidade e em verde para baixa/moderada, junto com a probabilidade estimada. Quando essa probabilidade fica entre 35% e 65%, a aplicação avisa que o caso está próximo do limite e recomenda análise individual. As limitações da solução ficam disponíveis em uma seção própria da página.
+
+
+7. VALIDAÇÃO PRÁTICA E CASOS DE TESTE
+
+Os casos foram executados com o script testes_casos.py, que usa as mesmas funções da aplicação, e depois repetidos na aplicação publicada, com resultados iguais. (Conferir no link antes de manter esta frase e inserir uma captura de tela de cada caso.)
+
+Caso | Tipo | Entrada | Esperado | Obtido
+1 | Válido | Renda R$ 80; 5 pessoas; idoso/PcD: sim; moradia precária: sim | Alta | Alta (99%)
+2 | Válido | Renda R$ 600; 2 pessoas; idoso/PcD: não; moradia precária: não | Baixa/moderada | Baixa/moderada (0%)
+3 | Válido | Renda R$ 300; 3 pessoas; idoso/PcD: sim; moradia precária: sim | Alta | Alta (81%)
+4a | Inválido | Renda de -R$ 100 | Erro, sem classificar | "A renda per capita não pode ser negativa."
+4b | Incompleto | Renda e moradia em branco | Erro, sem classificar | Mensagens pedindo os dois campos
+5 | Limítrofe | Renda R$ 0; 1 pessoa; idoso/PcD: não; moradia precária: não | Sem resultado real conhecido | Baixa/moderada (43%), com aviso de caso limítrofe
+
+Os casos 1 e 2 representam situações extremas, e o modelo respondeu com alta confiança. O caso 3 mostra que uma renda intermediária pode levar à classificação de alta vulnerabilidade quando outros fatores de risco estão presentes. Nos casos 4a e 4b, a aplicação não realizou a inferência e informou o problema ao usuário.
+
+O caso 5 mostrou uma limitação do modelo. Não há um resultado real conhecido para essa família, mas, pela regra usada para gerar o dataset, uma pessoa sem renda teria cerca de 75% de chance de ser rotulada como alta vulnerabilidade, enquanto o modelo indicou baixa/moderada com 43%. Isso ocorre porque a Regressão Logística combina as variáveis de forma linear: morar sozinha, sem idoso e com moradia regular reduz a probabilidade o suficiente para compensar a renda zero. Na prática, uma pessoa sem nenhuma renda é um caso grave, e por isso a aplicação exibe o aviso de caso limítrofe.
+
+
+8. LIMITAÇÕES E TRABALHOS FUTUROS
+
+A principal limitação é o uso de dados sintéticos. Os resultados mostram o funcionamento do método, mas não comprovam o desempenho em situações reais, o que exigiria dados anonimizados de um CRAS rotulados por técnicos. Além disso, cerca de 1 em cada 5 famílias de alta vulnerabilidade não foi identificada no teste (recall de 0,81), o que, em uma triagem real, significaria famílias sem a prioridade necessária. Uma alternativa seria reduzir o limiar de decisão para aumentar o recall, aceitando mais alarmes falsos.
+
+O modelo também usa apenas quatro variáveis, enquanto a vulnerabilidade social envolve fatores como violência doméstica, vínculos familiares, saúde e escolaridade. Por fim, o treino contém apenas rendas de até R$ 1.500 e no máximo 10 moradores, então valores fora dessa faixa não foram vistos pelo modelo. A ferramenta deve ser usada para apoiar a priorização de atendimentos, e não para conceder ou negar benefícios.
+
+Como trabalhos futuros, propõe-se testar o modelo com dados reais, avaliar o Random Forest, ajustar o limiar de decisão e incluir explicações individuais para cada classificação, por exemplo com valores SHAP.
+
+
+9. DECLARAÇÃO DE INTEGRIDADE E USO DE FERRAMENTAS
+
+Os autores declaram que o presente trabalho contém contribuição autoral própria. Ferramentas de inteligência artificial foram utilizadas como auxílio no desenvolvimento do código (geração do dataset sintético, treinamento, inferência e interface), na revisão textual e na estruturação do relatório. Todo o código, os dados e as análises foram executados, revisados e validados pelo grupo, que também definiu o problema, as variáveis e a interpretação dos resultados.
