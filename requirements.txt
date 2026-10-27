@@ -1,8 +1,8 @@
 # Versões usadas no treinamento. O scikit-learn PRECISA ser a mesma versão
 # no deploy, senão o modelo .pkl pode não carregar.
 scikit-learn==1.9.1
-pandas==3.0.5
-numpy==2.5.3
+pandas==3.1.0
+numpy==2.5.4
 joblib==1.6.0
 matplotlib==3.11.2
 streamlit>=1.40
