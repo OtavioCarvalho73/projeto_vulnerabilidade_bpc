@@ -4,8 +4,8 @@ Trabalho prático da disciplina Tópicos Avançados em Inteligência Artificial,
 
 Integrantes: Kaique Fernando, Otavio Carvalho e Rhayssa Ramos.
 
-Link da aplicação: COLOCAR O LINK AQUI
-Repositório no GitHub: COLOCAR O LINK AQUI
+Link da aplicação: https://projetovulnerabilidadebpc-sldzsgfvkehnzxcz49ygom.streamlit.app/
+Repositório no GitHub: https://github.com/OtavioCarvalho73/projeto_vulnerabilidade_bpc
 
 
 SOBRE O PROJETO
